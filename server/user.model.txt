@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // default relationMode is foreignKeys; Prisma will create FK constraints in migrations [2][7]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(255)
+  username  String   @unique @db.VarChar(32)
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // relation: one User has many Chats (virtual relation field, no column) [9][4]
+  chats     Chats[]
+}
+
+model Chats {
+  id         String   @id @default(uuid())
+  userId     String   // relation scalar field (the FK column) [4][9]
+  chatTitle  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // relation field that ties userId -> User.id [9][4]
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  // onDelete/onUpdate are optional; choose desired referential actions [4][6]
+}
+

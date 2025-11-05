@@ -1,0 +1,45 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["multiSchema"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["passprism", "public"]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique @db.VarChar(255)
+  username  String   @unique @db.VarChar(32)
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  Chats     Chats[]
+
+  @@schema("passprism")
+}
+
+model History {
+  id        Int      @id(map: "n8n_chat_histories_pk") @default(autoincrement())
+  sessionId String   @map("session_id") @db.VarChar(255)
+  message   Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  chat      Chats    @relation(fields: [sessionId], references: [id], onUpdate: NoAction, map: "n8n_chat_histories_chats_fk")
+
+  @@map("n8n_chat_histories")
+  @@schema("public")
+}
+
+model Chats {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.VarChar
+  userId    String    @db.VarChar
+  chatTitle String    @db.VarChar
+  createdAt DateTime  @default(now())
+  updatedAt DateTime
+  User      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  histories History[]
+
+  @@schema("passprism")
+}
